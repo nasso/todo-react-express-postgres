@@ -8,7 +8,9 @@ services:
 
     volumes:
       - ../..:/workspaces:cached
-      
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
+
     # Overrides default command so things don't shut down after the process ends.
     command: sleep infinity
 
