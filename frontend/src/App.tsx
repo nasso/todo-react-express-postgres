@@ -1,56 +1,47 @@
 import { useState } from "react";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "react-query";
+import { getTodos, postTodo, putTodo, deleteTodo } from "./api";
 
-type Todo = {
-  id: number;
-  title: string;
-  completed: boolean;
-};
+const queryClient = new QueryClient();
 
-const newId = (() => {
-  let id = 0;
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Todos />
+    </QueryClientProvider>
+  );
+}
 
-  return () => {
-    id += 1;
-    return id;
-  };
-})();
-
-function App() {
-  const [todos, setTodos] = useState<Todo[]>([]);
+function Todos() {
   const [title, setTitle] = useState("");
+  const { data } = useQuery("todos", getTodos);
 
-  function addTodo() {
-    setTodos([
-      ...todos,
-      {
-        id: newId(),
-        title,
-        completed: false,
-      },
-    ]);
+  const queryClient = useQueryClient();
 
-    setTitle("");
-  }
+  const postMutation = useMutation(postTodo, {
+    onSuccess: () => {
+      queryClient.invalidateQueries("todos");
+      setTitle("");
+    },
+  });
 
-  function updateTodo(id: number, completed: boolean) {
-    const newTodos = todos.map((todo) => {
-      if (todo.id === id) {
-        return {
-          ...todo,
-          completed,
-        };
-      }
-      return todo;
-    });
+  const putMutation = useMutation(putTodo, {
+    onSuccess: () => {
+      queryClient.invalidateQueries("todos");
+    },
+  });
 
-    setTodos(newTodos);
-  }
-
-  function deleteTodo(id: number) {
-    const newTodos = todos.filter((todo) => todo.id !== id);
-
-    setTodos(newTodos);
-  }
+  const deleteMutation = useMutation(deleteTodo, {
+    onSuccess: () => {
+      queryClient.invalidateQueries("todos");
+    },
+  });
 
   return (
     <div className="flex flex-col gap-4 pb-4 xl:items-center">
@@ -62,7 +53,7 @@ function App() {
           className="flex justify-center gap-4"
           onSubmit={(e) => {
             e.preventDefault();
-            addTodo();
+            postMutation.mutate(title);
           }}
         >
           <input
@@ -76,29 +67,34 @@ function App() {
           </button>
         </form>
         <ul className="flex flex-col gap-4">
-          {todos.map((todo) => (
-            <li
-              key={todo.id}
-              className="flex items-center gap-4 rounded-lg bg-slate-800 p-4"
-            >
-              <input
-                type="checkbox"
-                checked={todo.completed}
-                onChange={(e) => updateTodo(todo.id, e.target.checked)}
-              />
-              <p className="grow">{todo.title}</p>
-              <button
-                className="h-10 rounded-md bg-red-500 px-4 text-white"
-                onClick={() => deleteTodo(todo.id)}
+          {data
+            ?.sort((a, b) => a.id - b.id)
+            ?.map((todo) => (
+              <li
+                key={todo.id}
+                className="flex items-center gap-4 rounded-lg bg-slate-800 p-4"
               >
-                Delete
-              </button>
-            </li>
-          ))}
+                <input
+                  type="checkbox"
+                  checked={todo.completed}
+                  onChange={(e) =>
+                    putMutation.mutate({
+                      id: todo.id,
+                      completed: e.target.checked,
+                    })
+                  }
+                />
+                <p className="grow">{todo.title}</p>
+                <button
+                  className="h-10 rounded-md bg-red-500 px-4 text-white"
+                  onClick={() => deleteMutation.mutate(todo.id)}
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
         </ul>
       </main>
     </div>
   );
 }
-
-export default App;
