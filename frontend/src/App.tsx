@@ -6,7 +6,7 @@ import {
   useQuery,
   useQueryClient,
 } from "react-query";
-import { getTodos, postTodo, putTodo, deleteTodo } from "./api";
+import { getTodos, postTodo, putTodo, deleteTodo, Todo } from "./api";
 
 const queryClient = new QueryClient();
 
@@ -25,27 +25,77 @@ function Todos() {
   const queryClient = useQueryClient();
 
   const postMutation = useMutation(postTodo, {
-    onSuccess: () => {
-      queryClient.invalidateQueries("todos");
+    onMutate: async (newTodoTitle) => {
+      await queryClient.cancelQueries("todos");
+
+      const previousTodos = queryClient.getQueryData("todos");
+
+      queryClient.setQueryData("todos", (old: Todo[] | undefined) => [
+        ...(old ?? []),
+        { id: Date.now(), title: newTodoTitle, completed: false },
+      ]);
+
       setTitle("");
+
+      return { previousTodos, newTodoTitle };
+    },
+    onError: (_err, _newTodoTitle, context) => {
+      queryClient.setQueryData("todos", context?.previousTodos ?? []);
+      setTitle(context?.newTodoTitle ?? "");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries("todos");
     },
   });
 
   const putMutation = useMutation(putTodo, {
-    onSuccess: () => {
+    onMutate: async (updatedTodo) => {
+      await queryClient.cancelQueries("todos");
+
+      const previousTodos = queryClient.getQueryData("todos");
+
+      queryClient.setQueryData(
+        "todos",
+        (old: Todo[] | undefined) =>
+          old?.map((todo) =>
+            todo.id === updatedTodo.id ? { ...todo, ...updatedTodo } : todo
+          ) ?? []
+      );
+
+      return { previousTodos };
+    },
+    onError: (_err, _updatedTodo, context) => {
+      queryClient.setQueryData("todos", context?.previousTodos ?? []);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries("todos");
     },
   });
 
   const deleteMutation = useMutation(deleteTodo, {
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries("todos");
+
+      const previousTodos = queryClient.getQueryData("todos");
+
+      queryClient.setQueryData(
+        "todos",
+        (old: Todo[] | undefined) => old?.filter((todo) => todo.id !== id) ?? []
+      );
+
+      return { previousTodos };
+    },
+    onError: (_err, _id, context) => {
+      queryClient.setQueryData("todos", context?.previousTodos ?? []);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries("todos");
     },
   });
 
   return (
     <div className="flex flex-col gap-4 pb-4 xl:items-center">
-      <header className="rounded-b-2xl bg-slate-800 xl:w-2/3">
+      <header className="rounded-b-lg bg-slate-800 xl:w-2/3">
         <h1 className="p-4 text-center text-4xl font-bold">Todo List</h1>
       </header>
       <main className="flex w-screen flex-col justify-center gap-4 px-8 xl:w-2/3 xl:p-0">
