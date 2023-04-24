@@ -13,7 +13,8 @@
       "extensions": [
         "bradlc.vscode-tailwindcss",
         "esbenp.prettier-vscode",
-        "Prisma.prisma"
+        "Prisma.prisma",
+        "redhat.vscode-yaml"
       ]
     }
   }

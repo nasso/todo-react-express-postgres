@@ -2,6 +2,8 @@
   "name": "backend",
   "private": true,
   "scripts": {
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
     "start": "node dist/index.js",
     "build": "tsc",
     "dev": "concurrently \"tsc -w\" \"nodemon -q dist/index.js\"",

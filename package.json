@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "backend": "pnpm --filter=./backend",
+    "frontend": "pnpm --filter=./frontend",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "format": "pnpm -r format",
+    "dev": "pnpm -r dev"
+  }
+}
