@@ -1,6 +1,18 @@
 import { Router } from "express";
 import db from "./db";
 
+export function parseNewTodo(data: unknown) {
+  if (!data) return null;
+  if (typeof data !== "object") return null;
+  if (!("title" in data)) return null;
+  if (typeof data.title !== "string") return null;
+
+  return {
+    title: data.title,
+    completed: false,
+  };
+}
+
 const todos = Router();
 
 // Returns all todos
@@ -14,11 +26,17 @@ todos.get("/", async (_req, res) => {
 // Adds a new todo
 // Example: curl -X POST -H "Content-Type: application/json" -d '{"title": "Buy milk"}' http://localhost:8080/todos
 todos.post("/", async (req, res) => {
+  const data = parseNewTodo(req.body);
+
+  if (!data) {
+    res.status(400).json({
+      error: "Invalid todo data",
+    });
+    return;
+  }
+
   const todo = await db.todo.create({
-    data: {
-      title: req.body.title,
-      completed: false,
-    },
+    data,
   });
 
   res.status(201).json(todo);
