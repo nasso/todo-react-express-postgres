@@ -6,6 +6,7 @@ export function parseNewTodo(body: unknown) {
   if (typeof body !== "object") return null;
   if (!("title" in body)) return null;
   if (typeof body.title !== "string") return null;
+  if (body.title === "") return null;
 
   return {
     title: body.title,

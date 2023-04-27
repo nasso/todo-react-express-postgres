@@ -17,4 +17,16 @@ test("returns null on invalid payload", () => {
       tilte: "Buy milk",
     })
   ).toEqual(null);
+
+  expect(
+    parseNewTodo({
+      title: "",
+    })
+  ).toEqual(null);
+
+  expect(
+    parseNewTodo({
+      title: "     ",
+    })
+  ).toEqual(null);
 });
